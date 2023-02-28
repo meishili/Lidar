@@ -7,10 +7,13 @@ using namespace std;
 
 class Signal
 {
+	public:
+		enum Mode {Analog, Photon};
 	private:
 		double *signal;
 		const int size;
 		const double spatial_resolution;
+		Mode mode;
 	public:
 		Signal();
 		Signal(const int s = 8000; const double SR = 3.75);
@@ -37,6 +40,9 @@ class Signal
 		friend Signal &pow(const Signal &s, double x);
 		double &operator[](double x) const;
 		Signal &operator=(const Signal &s);
+		void remove_background();
+		void smooth();
+		void ap_transition();
 };
 
 #endif
