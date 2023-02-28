@@ -43,6 +43,7 @@ class Signal
 		void remove_background();
 		void smooth();
 		void ap_transition();
+		int signal_size() const {return size;}
 };
 
 #endif
