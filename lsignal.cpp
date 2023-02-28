@@ -11,11 +11,8 @@ Signal::Signal(const int s, const double sr, Mode m) : size(s), spatial_resoluti
 	signal = new double[size];
 }
 
-Signal::Signal(const Signal &s)
+Signal::Signal(const Signal &s) : size(s.size), spatial_resolution(s.spatial_resolution), mode(s.mode)
 {
-	size = s.size;
-	spatial_resolution = s.spatial_resolution;
-	mode = s.mode;
 	signal = new double[size];
 	for(int i = 0; i < size; i++)
 		*(signal + i) = *(s.signal + i);
@@ -44,7 +41,10 @@ Signal Signal::operator+(const double *s)
 
 Signal operator+(const double *s, const Signal &si)
 {
-	return si + s;
+	Signal temp(si.size, si.spatial_resolution, si.mode);
+	for(int i = 0; i < si.size; i++)
+		*(temp.signal + i) = *(s + i) + *(si.signal + i);
+	return temp;
 }
 
 Signal Signal::operator-(const Signal &s)
@@ -97,12 +97,18 @@ Signal Signal::operator*(const double s)
 
 Signal operator*(const double *s, const Signal &si)
 {
-	return si * s;
+	Signal temp(si.size, si.spatial_resolution, si.mode);
+	for(int i = 0; i < si.size; i++)
+		*(temp.signal + i) = *(s + i) * *(si.signal + i);
+	return temp;
 }
 
 Signal operator*(const double s, const Signal &si)
 {
-	return si * s;
+	Signal temp(si.size, si.spatial_resolution, si.mode);
+	for(int i = 0; i < si.size; i++)
+		*(temp.signal + i) = s * *(si.signal + i);
+	return temp;
 }
 
 Signal Signal::operator/(const Signal &s)
@@ -140,7 +146,7 @@ Signal operator/(const double *s, const Signal &si)
 Signal operator/(const double s, const Signal &si)
 {
 	Signal temp(si.size, si.spatial_resolution, si.mode);
-	for(int i = 0; i < s.size; i++)
+	for(int i = 0; i < si.size; i++)
 		*(temp.signal + i) = s / *(si.signal + i);
 	return temp;
 }
@@ -174,16 +180,14 @@ double &Signal::operator[](int x)
 	return *(signal + x);
 }
 
-Signal &operator=(const Signal &s)
+Signal &Signal::operator=(const Signal &s)
 {
 	if(this == &s)
-		return *this
+		return *this;
 	delete[] signal;
-	size = s.size;
 	mode = s.mode;
-	spatial_resolution = s.spatial_resolution;
-	signal = new double[size];
-	for(int i = 0; i < size; i++)
+	signal = new double[s.size];
+	for(int i = 0; i < s.size; i++)
 		*(signal + i) = *(s.signal + i);
 	return *this;
 }
@@ -193,7 +197,7 @@ void Signal::remove_background()
 	double temp = 0.0;
 	for(int i = size - 1000; i < size; i++)
 		temp += *(signal + i);
-	temp / 1000.0;
+	temp /= 1000.0;
 	for(int i = 0; i < size; i++)
 		*(signal + i) -= temp;
 }
