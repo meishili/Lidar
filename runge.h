@@ -19,7 +19,7 @@ class Runge
 		void set_wavelength(const double wavelength);
 		void set_wavelength(const double wavelength_0, const double wavelength);
 		double function_integer(const double lidar_ratio, const double k, const int n);
-		double function_half(const double lidar_ratio, const double k, const int n);
+		double function_half(const double lidar_ratio, const double k, const int n, const int delta = 0);
 		double overlap(const double lidar_ratio, const int n);
 		double fernald(const double lidar_ratio, const double overlap, const int n);
 		void read_signal(const int n, ifstream &sin);

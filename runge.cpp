@@ -111,3 +111,9 @@ void Runge::pretreatmen()
 		*(p607 + i)->smooth();
 	}
 }
+
+double Runge::function_integer(const double lidar_ratio, const double k, const int n, const int delta)
+{
+	
+
+}
