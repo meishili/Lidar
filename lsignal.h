@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <cmath>
-using namespace std;
 
 class Signal
 {
@@ -44,6 +43,8 @@ class Signal
 		void smooth();
 		void ap_transition();
 		int signal_size() const {return size;}
+		double get_diff(const int n1, const int n2) const;
+		double get_spatial_resolution() const {return spatial_resolution;}
 };
 
 #endif

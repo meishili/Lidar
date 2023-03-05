@@ -220,3 +220,26 @@ void Signal::ap_transition()
 		*(signal + i) = -370.47693 + 376.54905 * exp(0.0000903459 * *(signal + i) / 1.0 - 0.00213 * *(signal + i));
 	mode = Analog;
 }
+
+double Signal::get_diff(const int n1, const int n2) const
+{
+	double temp1 = 0.0;
+	double temp2 = 0.0;
+	double temp3 = 0.0;
+	double temp4 = 0.0;
+	if(n1 < 0 && n2 > size)
+	{
+		std::cout<<"Array out of bounds!"<<std::endl;
+		return 0.0;
+	}
+	for(int i = n1; i <= n2; i++)
+	{
+		temp1 += double(i) * spatial_resolution * *(signal + i);
+		temp2 += double(i) * spatial_resolution * double(i) * spatial_resolution;
+		temp3 += double(i) * spatial_resolution;
+		temp4 += *(signal + i);
+	}
+	double n = double(n1) - double(n2);
+	double k = (temp1 - temp3 * temp4 / n) / (temp2 - temp4 * temp4 / n);
+	return k;
+}

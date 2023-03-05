@@ -64,25 +64,27 @@ void Runge::set_wavelength(const double wavelength_0, const double wavelength)
 	lamda_R = wavelength;
 }
 
-void Runge::read_signal(const int n, ifstream &sin)
+void Runge::read_signal(const int n, std::ifstream &sin)
 {
 	double temp;
 	for(int i = 0; i < x->signal_size(); i++)
 	{
-		sin>>temp>>temp>>(**(p607 + n))[i]>>(**(p532p + n))[i]>>temp>>(**(p532s + n)[i])>>temp;
+		sin>>temp>>temp>>(**(p607 + n))[i]>>(**(p532p + n))[i];
+		sin>>temp>>(**(p532s + n))[i];
+		sin>>temp;
 	}
 }
 
-void Runge::read_molecule(ifstream &sin)
+void Runge::read_molecule(std::ifstream &sin)
 {
-	for(int i = 0; i < molecule_backscatter->signal_size(), i++)
+	for(int i = 0; i < molecule_backscatter->signal_size(); i++)
 	{
-		sin>>*molecule_backscatter[i];
+		sin>>(*molecule_backscatter)[i];
 		molecule_backscatter[i] = molecule_backscatter[i] / 1000.0 / molecule_lidar_ratio;
 	}
 }
 
-void Runge::total_signal();
+void Runge::total_signal()
 {
 	for(int i = 0; i < x->signal_size(); i++)
 	{
@@ -90,12 +92,12 @@ void Runge::total_signal();
 		double temp2 = 0.0;
 		for(int j = 0; j < size; j++)
 		{
-			temp1 = temp1 + **(p532p + j)[i] + **(p532s + j)[i];
-			temp2 = temp2 + **(p607 + j)[i];
+			temp1 = temp1 + (**(p532p + j))[i] + (**(p532s + j))[i];
+			temp2 = temp2 + (**(p607 + j))[i];
 		}
-		*signal532[i] = temp1 / double(size);
-		*signal607[i] = temp2 / double(size);
-		*x[i] = *signal607[i] / *signal532[i];
+		(*signal532)[i] = temp1 / double(size);
+		(*signal607)[i] = temp2 / double(size);
+		(*x)[i] = (*signal607)[i] / (*signal532)[i];
 	}
 }
 
@@ -103,18 +105,54 @@ void Runge::pretreatmen()
 {
 	for(int i = 0; i < size; i++)
 	{
-		*(p532p + i)->remove_background();
-		*(p532p + i)->smooth();
-		*(p532s + i)->remove_background();
-		*(p532s + i)->smooth();
-		*(p607 + i)->remove_background();
-		*(p607 + i)->smooth();
+		(*(p532p + i))->remove_background();
+		(*(p532p + i))->smooth();
+		(*(p532s + i))->remove_background();
+		(*(p532s + i))->smooth();
+		(*(p607 + i))->remove_background();
+		(*(p607 + i))->smooth();
 	}
 }
 
-double Runge::function_integer(const double lidar_ratio, 
-const double k, const int n, const int delta)
+double Runge::function_integer(const double lidar_ratio, const int n, 
+const double aerosol_backscatter, const double k)
 {
+	double spatial_resolution = (*p532p)->get_spatial_resolution();
+	if(abs(k - 0.0) < pow(10,-10))
+	{
+		double temp1 = molecule_backscatter->get_diff(n - 3, n + 3);
+		double temp2 = x->get_diff(n - 3, n + 3);
+		double temp3 = temp1 / (*molecule_backscatter)[n] + (1.0 - pow(lamda_0, 4) 
+		/ pow(lamda_R, 4)) * (*molecule_backscatter)[n] * molecule_lidar_ratio +
+		 (1.0 - lamda_0 / lamda_R) * aerosol_backscatter * lidar_ratio - temp2 / (*x)[n];
+		double temp4 = (*molecule_backscatter)[n] + aerosol_backscatter;
+		return (temp3 * temp4 - temp1);
+	}
+	else
+	{
+		double temp1 = molecule_backscatter->get_diff(n - 4, n + 2);
+		double temp2 = x->get_diff(n - 4, n + 2);
+		double temp3 = temp1 / (*molecule_backscatter)[n - 1] + (1.0 - pow(lamda_0, 4) 
+		/ pow(lamda_R, 4)) * (*molecule_backscatter)[n - 1] * molecule_lidar_ratio + 
+		(1.0 - lamda_0 / lamda_R) * ((aerosol_backscatter - k) * lidar_ratio 
+		* spatial_resolution) - temp2 / (*x)[n - 1];
+		double temp4 = (*molecule_backscatter)[n - 1] + (aerosol_backscatter - k * spatial_resolution);
+		return (temp3 * temp4 - temp1);
+	}
+}
 
 
+double Runge::function_half(const double lidar_ratio, const int n, 
+const double aerosol_backscatter, const double k)
+{
+	double spatial_resolution = (*p532p)->get_spatial_resolution();
+	double temp1 = molecule_backscatter->get_diff(n - 3, n + 2);
+	double temp2 = x->get_diff(n - 3, n + 2);
+	double temp3 = temp1 / ((*molecule_backscatter)[n - 1] + (*molecule_backscatter)[n]) * 2.0
+	+ (1.0 - pow(lamda_0, 4) / pow(lamda_R, 4)) * ((*molecule_backscatter)[n - 1] + (*molecule_backscatter)[n])
+	/ 2.0 * molecule_lidar_ratio + (1.0 - lamda_0 / lamda_R) * (aerosol_backscatter - k * 
+	spatial_resolution / 2.0) * lidar_ratio - temp2 / ((*x)[n - 1] + (*x)[n]) * 2.0;
+	double temp4 = ((*molecule_backscatter)[n - 1] + (*molecule_backscatter)[n]) / 2.0 +
+	aerosol_backscatter - k * spatial_resolution / 2.0;
+	return (temp3 * temp4 - temp1);
 }
