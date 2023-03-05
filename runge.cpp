@@ -17,9 +17,9 @@ Runge::Runge(const int s, int number, double spatial_resolution) : size(s)
 	signal532 = new Signal(number, spatial_resolution);
 	signal607 = new Signal(number, spatial_resolution);
 	molecule_backscatter = new Signal(number, spatial_resolution);
-	p532p = new *Signal[size];
-	p532s = new *Signal[size];
-	p607 = new *Signal[size];
+	p532p = new Signal*[size];
+	p532s = new Signal*[size];
+	p607 = new Signal*[size];
 	for(int i = 0; i < size; i++)
 	{
 		p532p[i] = new Signal(number, spatial_resolution);
@@ -69,7 +69,7 @@ void Runge::read_signal(const int n, ifstream &sin)
 	double temp;
 	for(int i = 0; i < x->signal_size(); i++)
 	{
-		sin>>temp>>temp>>**(p607 + n)[i]>>**(p532p + n)[i]>>temp>>**(p532s + n)[i]>>temp;
+		sin>>temp>>temp>>(**(p607 + n))[i]>>(**(p532p + n))[i]>>temp>>(**(p532s + n)[i])>>temp;
 	}
 }
 
@@ -112,8 +112,9 @@ void Runge::pretreatmen()
 	}
 }
 
-double Runge::function_integer(const double lidar_ratio, const double k, const int n, const int delta)
+double Runge::function_integer(const double lidar_ratio, 
+const double k, const int n, const int delta)
 {
-	
+
 
 }
