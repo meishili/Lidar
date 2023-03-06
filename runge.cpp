@@ -9,6 +9,7 @@ Runge::Runge() : size(0)
 	p532p = nullptr;
 	p532s = nullptr;
 	p607 = nullptr;
+	Range_corrected_signal = nullptr;
 }
 
 Runge::Runge(const int s, int number, double spatial_resolution) : size(s)
@@ -16,6 +17,7 @@ Runge::Runge(const int s, int number, double spatial_resolution) : size(s)
 	x = new Signal(number, spatial_resolution);
 	signal532 = new Signal(number, spatial_resolution);
 	signal607 = new Signal(number, spatial_resolution);
+	Range_corrected_signal = new Signal(number, spatial_resolution);
 	molecule_backscatter = new Signal(number, spatial_resolution);
 	p532p = new Signal*[size];
 	p532s = new Signal*[size];
@@ -99,6 +101,8 @@ void Runge::total_signal()
 		(*signal607)[i] = temp2 / double(size);
 		(*x)[i] = (*signal607)[i] / (*signal532)[i];
 	}
+	spatial_resolution = x->get_spatial_resolution();
+	(*Range_corrected_signal) = spatial_resolution * spatial_resolution * (*signal532);
 }
 
 void Runge::pretreatmen()
@@ -117,7 +121,6 @@ void Runge::pretreatmen()
 double Runge::function_integer(const double lidar_ratio, const int n, 
 const double aerosol_backscatter, const double k)
 {
-	double spatial_resolution = (*p532p)->get_spatial_resolution();
 	if(abs(k - 0.0) < pow(10,-10))
 	{
 		double temp1 = molecule_backscatter->get_diff(n - 3, n + 3);
@@ -145,7 +148,6 @@ const double aerosol_backscatter, const double k)
 double Runge::function_half(const double lidar_ratio, const int n, 
 const double aerosol_backscatter, const double k)
 {
-	double spatial_resolution = (*p532p)->get_spatial_resolution();
 	double temp1 = molecule_backscatter->get_diff(n - 3, n + 2);
 	double temp2 = x->get_diff(n - 3, n + 2);
 	double temp3 = temp1 / ((*molecule_backscatter)[n - 1] + (*molecule_backscatter)[n]) * 2.0
@@ -155,4 +157,30 @@ const double aerosol_backscatter, const double k)
 	double temp4 = ((*molecule_backscatter)[n - 1] + (*molecule_backscatter)[n]) / 2.0 +
 	aerosol_backscatter - k * spatial_resolution / 2.0;
 	return (temp3 * temp4 - temp1);
+}
+
+double Runge::overlap(const double lidar_ratio, double &interal, const int n,
+const int reference)
+{
+	double overlap;
+	overlap = (*signal607)[n] * spatial_resolution * double(n) * spatial_resolution * double(n)
+	* (*molecule_backscatter)[reference] / (*signal607)[reference] / spatial_resolution /
+	spatial_resolution / double(reference) / double(reference) / (*molecule_backscatter)[n];
+	interal += (1.0 + pow(lamda_0 / lamda_R, 4)) * ((*molecule_backscatter)[n] +
+	(*molecule_backscatter)[n + 1]);
+	overlap *= exp(- (interal * spatial_resolution));
+	return overlap;
+}
+
+double Runge::fernald(const double lidar_ratio, const double overlap, 
+const double aerosol_backscatter, const int n)
+{
+	(*Range_corrected_signal)[n] /= overlap;
+	double temp1 = (*Range_corrected_signal)[n] * exp((lidar_ratio - molecule_lidar_ratio) *
+	((*molecule_backscatter)[n] + (*molecule_backscatter)[n + 1]) * spatial_resolution);
+	double temp2 = (*Range_corrected_signal)[n + 1] / (aerosol_backscatter + (*molecule_backscatter)[n + 1] /
+	molecule_lidar_ratio);
+	double temp3 = lidar_ratio * ((*Range_corrected_signal)[n + 1] + temp1) * spatial_resolution;
+	double aerosol = temp1 / (temp2 + temp3) - (*molecule_backscatter)[n] / molecule_lidar_ratio;
+	return aerosol;
 }

@@ -11,10 +11,11 @@ class Runge
 		const double molecule_lidar_ratio = 8.0 * 3.1415926 / 3.0;
 	private:
 		const int size;
-		Signal *x, *signal532, *signal607;
+		Signal *x, *signal532, *signal607, *Range_corrected_signal;
 		Signal *molecule_backscatter;
 		Signal **p532p, **p532s, **p607;
 		double lamda_0, lamda_R;
+		double spatial_resolution;
 	public:
 		Runge();
 		/*This constructor takes an s of type int to represent the number of
@@ -43,11 +44,13 @@ class Runge
 
 		/*This equation receives lidar coins and n, and return overlap at the
 		corresponding heigth of n.*/
-		double overlap(const double lidar_ratio, const int n);
+		double overlap(const double lidar_ratio, double &interal, const int n, 
+		const int reference = 1000);
 
 		/*This function return bascatter coefficient at the corresponding heifht of n,
 		 which obtain by fernald mathod.*/
-		double fernald(const double lidar_ratio, const double overlap, const int n);
+		double fernald(const double lidar_ratio, const double overlap, 
+		const double aerosol_backscatter, const int n);
 
 		/*Receives an ifstream object, and a count n, and reads the corresponding
 		data contents into an array of objects such as p532p.*/
