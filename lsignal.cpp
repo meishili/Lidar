@@ -1,18 +1,26 @@
 #include "lsignal.h"
 
-Signal::Signal() : size(0), spatial_resolution(3.75), mode(Analog)
+Signal::Signal()
 {
+	size = 0;
+	spatial_resolution = 3.75;
+	mode = Analog;
 	signal = nullptr;
 }
 
-Signal::Signal(const int s, const double sr, Mode m) : size(s), spatial_resolution(sr)
+Signal::Signal(const int s, const double sr, Mode m)
 {
+	size = s;
+	spatial_resolution = sr;
 	mode = m;
 	signal = new double[size];
 }
 
-Signal::Signal(const Signal &s) : size(s.size), spatial_resolution(s.spatial_resolution), mode(s.mode)
+Signal::Signal(const Signal &s)
 {
+	size = s.size;
+	spatial_resolution = s.spatial_resolution;
+	mode = s.mode;
 	signal = new double[size];
 	for(int i = 0; i < size; i++)
 		*(signal + i) = *(s.signal + i);
@@ -186,6 +194,8 @@ Signal &Signal::operator=(const Signal &s)
 		return *this;
 	delete[] signal;
 	mode = s.mode;
+	size = s.size;
+	spatial_resolution = s.spatial_resolution;
 	signal = new double[s.size];
 	for(int i = 0; i < s.size; i++)
 		*(signal + i) = *(s.signal + i);
@@ -216,9 +226,14 @@ void Signal::smooth()
 
 void Signal::ap_transition()
 {
-	for(int i = 0; i < size; i++)
-		*(signal + i) = -370.47693 + 376.54905 * exp(0.0000903459 * *(signal + i) / 1.0 - 0.00213 * *(signal + i));
-	mode = Analog;
+	if(mode == Analog)
+		std::cout<<"This signal is analog!"<<std::endl;
+	else
+	{
+		for(int i = 0; i < size; i++)
+			*(signal + i) = -370.47693 + 376.54905 * exp(0.0000903459 * *(signal + i) / 1.0 - 0.00213 * *(signal + i));
+		mode = Analog;
+	}
 }
 
 double Signal::get_diff(const int n1, const int n2) const

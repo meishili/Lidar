@@ -10,8 +10,8 @@ class Signal
 		enum Mode {Analog, Photon};
 	private:
 		double *signal;
-		const int size;
-		const double spatial_resolution;
+		int size;
+		double spatial_resolution;
 		Mode mode;
 	public:
 		Signal();
