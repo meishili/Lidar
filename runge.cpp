@@ -172,7 +172,7 @@ const int reference)
 	return overlap;
 }
 
-double Runge::fernald(const double lidar_ratio, const double overlap, 
+double Runge::fernald(const double lidar_ratio, const double overlap,
 const double aerosol_backscatter, const int n)
 {
 	(*Range_corrected_signal)[n] /= overlap;

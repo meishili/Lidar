@@ -70,5 +70,9 @@ class Runge
 		/*A seven-point linear smooth and background remove background will
 		be performed on all data in class such as p532p.*/
 		void pretreatmen();
+
+		int get_size() {return size;}
+
+		double reference_backscatter(int n) {return (*molecule_backscatter)[n];}
 };
 #endif
