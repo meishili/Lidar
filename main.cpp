@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
             count++;
             i = 0;
             if(count >= 11){
-            break;
+                break;
             }
         }
         filename[count][i] = licel_file;
