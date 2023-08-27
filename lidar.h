@@ -9,7 +9,7 @@
 
 constexpr double molecule_lidar_ratio = 8.0 * 3.1415926 / 3.0;
 constexpr double lidar_ratio = 50.0;
-constexpr double color_correct = 0.12378;
+constexpr double color_correct = 1.22612;
 constexpr double molecule_depolarization = 0.00376;
 
 class Lidar{
@@ -21,6 +21,7 @@ class Lidar{
         std::unique_ptr<double[]> TABC;
         std::unique_ptr<double[]> extinction;
         std::unique_ptr<double[]> PDR;
+        std::unique_ptr<double[]> VDR;
         std::unique_ptr<double[]> CR;
         std::unique_ptr<double[]> volume_con;
         std::unique_ptr<double[]> eff_rad;
