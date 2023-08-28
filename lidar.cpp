@@ -1,5 +1,7 @@
 #include "lidar.h"
 
+std::mutex mtx;
+
 Lidar::Lidar(int n) : size(n){
     signal532p = std::make_unique<double[]>(size);
     signal532s = std::make_unique<double[]>(size); 
@@ -59,18 +61,22 @@ void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_p
         extinction[i] = temp1 / (temp2 + temp3) - molecule_lidar_ratio / lidar_ratio * molecule_extinction[i];
     }
     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
-    for(int i = 1; i != 3000; ++i){
-        if(i < 30){
-            sum1 += extinction[i + 30] + extinction[i + 31] + molecule_extinction[i + 30] + molecule_extinction[i + 31];
+    for(int i = 1; i != 300; ++i){
+        if(i < 50){
+            sum1 += extinction[i + 50] + extinction[i + 51] + molecule_extinction[i + 50] + molecule_extinction[i + 51];
         }else{
             sum1 += extinction[i] + extinction[i - 1] + molecule_extinction[i] + molecule_extinction[i - 1];
             temp1 = (extinction[i] / lidar_ratio + molecule_extinction[i] / molecule_lidar_ratio) * exp(-1.0 * sum1 * 3.75);
             sum2 += temp1;
             sum3 += TABC[i];
+            
         }
     }
     double R;
     double lidar_const = sum2 / sum3;
+    double cc[2] = {4.13277, 4.383524};
+    lidar_const = cc[1] * pow(10.0, -14);
+    // std::cout<<lidar_const<<std::endl;
     for(int i = 0; i != reference; ++i){
         TABC[i] *= lidar_const;
         R = 1.0 + extinction[i] / lidar_ratio / molecule_extinction[i] * molecule_lidar_ratio;
@@ -82,7 +88,7 @@ void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_p
 
 void Lidar::microphysical(){
     int reference = size / 8 * 3;
-    for(int i = 0; i != reference; ++i){
+    for(int i = 0; i != 3000; ++i){
         CR[i] = signal1064[i] / signal532[i] / color_correct;
         eff_rad[i] = 0.2296 + 3.3784 * PDR[i] - 0.1358 * CR[i] + 33174.9 * TABC[i];
         volume_con[i] = 0.01294 + 2.03615 * PDR[i] - 0.01456 * CR[i] - 2247.2 * TABC[i];
@@ -115,9 +121,52 @@ void Lidar::show(std::ofstream &sout){
     int hours = get_hours();
     double time = get_time();
     int reference = size / 8 * 3;
-    for(int i = 10; i != reference; ++i){
-        sout<<time<<"  "<<distance[i]<<"  "<<TABC[i]<<"  "<<extinction[i]<<"  "<<PDR[i]<<"  "<<VDR[i];
+    for(int i = 30; i != reference; ++i){
+        sout<<time<<"  "<<distance[i] / 1000.0<<"  "<<TABC[i] * 1000.0<<"  "<<extinction[i] * 1000.0<<"  "<<PDR[i]<<"  "<<VDR[i];
         sout<<"  "<<CR[i]<<"  "<<volume_con[i]<<"  "<<eff_rad[i]<<"  "<<day<<"  "<<hours<<std::endl;
         // sout<<distance[i]<<"  "<<extinction[i]<<"  "<<signal532s[i]<<"  "<<TABC[i]<<std::endl;
     }
 }
+
+double Lidar::mean_eff_rad(){
+    double sum = 0.0;
+    for(int i = 200; i != 800; ++i){
+        sum += eff_rad[i];
+    }
+    sum /= 600.0;
+    return sum;
+}
+
+double Lidar::mean_ext(){
+    double sum = 0.0;
+    for(int i = 200; i != 800; ++i){
+        sum += extinction[i];
+    }
+    sum /= 600.0;
+    return sum;
+}
+
+double Lidar::mean_vol_con(){
+    double sum = 0.0;
+    for(int i = 200; i != 800; ++i){
+        sum += volume_con[i];
+    }
+    sum /= 600.0;
+    return sum;
+}
+
+double Lidar::mean_pdr(){
+    double sum = 0.0;
+    for(int i = 200; i != 800; ++i){
+        sum += PDR[i];
+    }
+    sum /= 600.0;
+    return sum;
+}
+
+void Lidar::mean(std::shared_ptr<Mean> mean){
+    mtx.lock();
+    mean->add(extinction, eff_rad, volume_con, PDR);
+    mtx.unlock();
+}
+

@@ -6,6 +6,9 @@
 #include <cmath>
 #include <string>
 #include <memory>
+#include <mutex>
+#include "mean.h"
+
 
 constexpr double molecule_lidar_ratio = 8.0 * 3.1415926 / 3.0;
 constexpr double lidar_ratio = 50.0;
@@ -29,18 +32,23 @@ class Lidar{
         std::string filename;
         const int size;
     private:
-        double get_time();
         int get_day();
         int get_hours();
     public:
         Lidar() : size(0){}
         Lidar(int n);
+        double get_time();
         void set_filename(std::string f){filename = f;}
         void read();
         void remove_background();
         void fernald(const std::shared_ptr<double[]> overlap, const std::shared_ptr<double[]> molecule_extinction);
         void microphysical();
         void show(std::ofstream &sout);
+        double mean_ext();
+        double mean_eff_rad();
+        double mean_vol_con();
+        double mean_pdr();
+        void mean(std::shared_ptr<Mean> mean);
 
 };
 
