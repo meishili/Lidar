@@ -16,7 +16,7 @@ public:
     ~Mean(){}
     void add(const std::unique_ptr<double[]> &ptr1, const std::unique_ptr<double[]> &ptr2, const std::unique_ptr<double[]> &ptr3, const std::unique_ptr<double[]> &ptr4);
     void show(const std::string &filename);
-    void show_count(){std::cout<<"count = "<<count<<std::endl;}
+    void show_count();
 };
 
 #endif

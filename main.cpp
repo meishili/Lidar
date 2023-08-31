@@ -16,6 +16,12 @@ void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::
     mout.precision(10);
     Lidar lidar(8000);
     for(int i = 1; i != day + 1; ++i){
+        if(month == 5 and day == 19){
+            continue;
+        }
+        if(month == 5 and day == 30){
+            continue;
+        }
         std::string foder = "lz" + std::to_string(year);
         if(month < 10){
             foder += "0" + std::to_string(month);
@@ -42,8 +48,8 @@ void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::
             lidar.fernald(overlap, molecule_extinction);
             lidar.microphysical();
             lidar.show(sout);
-            PDR_mean += lidar.mean_pdr();
-            double p = PDR_mean;
+            double p = lidar.mean_pdr();
+            PDR_mean += p;
             ext_mean += lidar.mean_ext();
             vol_mean += lidar.mean_vol_con();
             eff_mean += lidar.mean_eff_rad();
@@ -90,7 +96,12 @@ int main(int argc, char *argv[]){
     }
 
     for(int i = 0; i != 12; ++i){
-        thr.push_back(std::thread(work, year[i], i + 1, month[i], overlap, molecule_extinction, mean_coe[((i + 10) / 3) % 4]));
+        // if(i == 4 and i == 5){
+        //     continue;
+        // }
+        // if(i ==  1 or i ==  3 or i == 6 or i == 9){
+            thr.push_back(std::thread(work, year[i], i + 1, month[i], overlap, molecule_extinction, mean_coe[((i + 10) / 3) % 4]));
+        // }
     }
     for(auto i = thr.begin(); i != thr.end(); ++i){
         i->join();
@@ -105,7 +116,8 @@ int main(int argc, char *argv[]){
         mean_coe[i][0]->show(season[i] + "_zy_dust.txt");
         mean_coe[i][1]->show(season[i] + "_zy_other.txt");
     }
-
+    mean_coe[0][0]->show_count();
+    mean_coe[0][1]->show_count();
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
     std::cout<<"The run time is: "<<duration.count()<<" min!"<<std::endl;

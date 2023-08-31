@@ -34,6 +34,7 @@ class Lidar{
     private:
         int get_day();
         int get_hours();
+        void smooth(std::unique_ptr<double[]> &ptr);
     public:
         Lidar() : size(0){}
         Lidar(int n);
