@@ -36,3 +36,24 @@ void Sbdart::out_aer(std::ofstream &sout, Fernald &fernald){
     sout<<"gbaer = "<<gbaer<<std::endl;
 }
 
+void Sbdart::output_aer(const std::string filename, Fernald &fernald){
+    std::ofstream sout;
+    sout.open(filename);
+    out_head(sout);
+    sout<<"iaer = 5"<<std::endl;
+    sout<<"wlbaer = "<<wlbaer<<std::endl;
+    out_aer(sout, fernald);
+    out_end(sout);
+    sout.close();
+}
+
+void Sbdart::output_clear(const std::string filename){
+    std::ofstream sout;
+    sout.open(filename);
+    out_head(sout);
+    sout<<"iaer = 0"<<std::endl;
+    sout<<"wlbaer = "<<wlbaer<<std::endl;
+    out_end(sout);
+    sout.close();
+}
+
