@@ -10,7 +10,7 @@ class Mean
 {
 private:
     std::unique_ptr<std::unique_ptr<double[]>[]> ptr;
-    int count;
+    std::unique_ptr<std::unique_ptr<int[]>[]> count;
 public:
     Mean();
     ~Mean(){}

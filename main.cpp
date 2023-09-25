@@ -3,13 +3,14 @@
 #include <vector>
 #include <chrono>
 #include "lidar.h"
+std::string city = "zy";
 
-std::string path = "/home/yukikaze/lidar/c++/microphysical/data/zy/";
+std::string path = "/home/yukikaze/lidar/microphysical/data/" + city + "/";
 
-void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::shared_ptr<double[]> molecule_extinction, std::vector<std::shared_ptr<Mean>> mean_coe){
+void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::shared_ptr<double[]> molecule_extinction, std::vector<std::shared_ptr<Mean>> mean_coe, std::shared_ptr<Coe_count[]> coe_count){
     std::string dir = std::to_string(month) + "_dir.txt";
-    std::string outname = std::to_string(month) + "_zy_out.txt";
-    std::string mean_name = std::to_string(month) + "_zy_mean.txt";
+    std::string outname = std::to_string(month) + "_" + city + "_out.txt";
+    std::string mean_name = std::to_string(month) + "-" + city + "_mean.txt";
     std::ofstream sout, mout;
     sout.open(outname);
     mout.open(mean_name);
@@ -47,18 +48,28 @@ void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::
             lidar.remove_background();
             lidar.fernald(overlap, molecule_extinction);
             lidar.microphysical();
-            lidar.show(sout);
+            // if(!lidar.is_cloud()){
+            //     lidar.show(sout);
+            // }
             double p = lidar.mean_pdr();
             PDR_mean += p;
             ext_mean += lidar.mean_ext();
             vol_mean += lidar.mean_vol_con();
             eff_mean += lidar.mean_eff_rad();
             ++count;
+            double CR = lidar.mean_color_ratio();
             // std::cout<<eff_mean<<std::endl;
-            if(p >= 0.15){
-                lidar.mean(mean_coe[0]);
+            if(p >= 0.12){
+                if(!lidar.is_cloud()){
+                    lidar.mean(mean_coe[0]);
+                }
+                if(month == 4 or month == 5 or month == 3){
+                    lidar.add_fre(coe_count);
+                }
             }else{
-                lidar.mean(mean_coe[1]);
+                if(!lidar.is_cloud()){
+                    lidar.mean(mean_coe[1]);
+                }
             }
             // return;
         }
@@ -75,8 +86,8 @@ int main(int argc, char *argv[]){
     std::shared_ptr<double[]> molecule_extinction(new double[8000]);
     std::ifstream oin;
     std::fstream min;
-    oin.open("../zy_overlap.txt");
-    min.open("../zy_air.txt");
+    oin.open("../" + city + "_overlap.txt");
+    min.open("../" + city + "_air.txt");
     for(int i = 0; i != 8000; ++i){
         oin>>overlap[i];
         min>>molecule_extinction[i];
@@ -95,17 +106,29 @@ int main(int argc, char *argv[]){
         mean_coe[i].push_back(std::make_shared<Mean>());
     }
 
+    std::shared_ptr<Coe_count[]> coe_count(new Coe_count[3]{Coe_count(0.2, 1.5, 0.6, 0.4), Coe_count(0.2, 1.5, 0.6, 0.4), Coe_count(0.2, 1.5, 0.6, 0.4)});
+
     for(int i = 0; i != 12; ++i){
         // if(i == 4 and i == 5){
         //     continue;
         // }
         // if(i ==  1 or i ==  3 or i == 6 or i == 9){
-            thr.push_back(std::thread(work, year[i], i + 1, month[i], overlap, molecule_extinction, mean_coe[((i + 10) / 3) % 4]));
+            thr.push_back(std::thread(work, year[i], i + 1, month[i], overlap, molecule_extinction, mean_coe[((i + 10) / 3) % 4], coe_count));
         // }
     }
     for(auto i = thr.begin(); i != thr.end(); ++i){
         i->join();
     }
+    std::ofstream coe_out1, coe_out2, coe_out3;
+    coe_out1.open("../1000_" + city + ".txt");
+    coe_out2.open("../2000_" + city + ".txt");
+    coe_out3.open("../3000_" + city + ".txt");
+    coe_count[0].show(coe_out1);
+    coe_count[1].show(coe_out2);
+    coe_count[2].show(coe_out3);
+    coe_out1.close();
+    coe_out2.close();
+    coe_out3.close();
 
     std::vector<std::string> season;
     season.push_back("Spring");
@@ -113,8 +136,8 @@ int main(int argc, char *argv[]){
     season.push_back("Autumn");
     season.push_back("Winter");
     for(int i = 0; i != 4; ++i){
-        mean_coe[i][0]->show(season[i] + "_zy_dust.txt");
-        mean_coe[i][1]->show(season[i] + "_zy_other.txt");
+        mean_coe[i][0]->show(season[i] + "_" + city + "_dust.txt");
+        mean_coe[i][1]->show(season[i] + "_" + city + "_other.txt");
     }
     mean_coe[0][0]->show_count();
     mean_coe[0][1]->show_count();

@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include "mean.h"
+#include "distance.h"
 
 
 constexpr double molecule_lidar_ratio = 8.0 * 3.1415926 / 3.0;
@@ -35,6 +36,7 @@ class Lidar{
         int get_day();
         int get_hours();
         void smooth(std::unique_ptr<double[]> &ptr);
+        double slope(const std::unique_ptr<double[]> &x, const std::unique_ptr<double[]> &y);
     public:
         Lidar() : size(0){}
         Lidar(int n);
@@ -49,7 +51,10 @@ class Lidar{
         double mean_eff_rad();
         double mean_vol_con();
         double mean_pdr();
+        double mean_color_ratio();
+        bool is_cloud();
         void mean(std::shared_ptr<Mean> mean);
+        void add_fre(std::shared_ptr<Coe_count[]> ptr);
 
 };
 

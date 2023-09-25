@@ -52,7 +52,7 @@ void Lidar::remove_background(){
 }
 
 void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_ptr<double[]> molecule_extinction){
-    int reference = 800;
+    int reference = 1600;
     for(int i = reference; i != 0; --i){
         TABC[i] = signal532[i] * distance[i] * distance[i] / overlap[i];
     }
@@ -67,20 +67,21 @@ void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_p
         temp3 = (TABC[i + 1] + temp1) * 3.75;
         extinction[i] = temp1 / (temp2 + temp3) - molecule_extinction[i] / molecule_lidar_ratio * lidar_ratio;
     }
-    double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
+    // auto TABC_fit = std::make_unique<double[]>(800);
+    // double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
     // for(int i = 1; i != 300; ++i){
-    //     if(i < 50){
-    //         sum1 += extinction[i + 50] + extinction[i + 51] + molecule_extinction[i + 50] + molecule_extinction[i + 51];
+    //     if(i < 20){
+    //         sum1 += extinction[i + 20] + extinction[i + 21] + molecule_extinction[i + 20] + molecule_extinction[i + 21];
     //     }else{
     //         sum1 += extinction[i] + extinction[i - 1] + molecule_extinction[i] + molecule_extinction[i - 1];
     //         temp1 = (extinction[i] / lidar_ratio + molecule_extinction[i] / molecule_lidar_ratio) * exp(-1.0 * sum1 * 3.75);
-    //         sum2 += temp1;
-    //         sum3 += TABC[i];
-            
+    //         TABC_fit[i] += temp1;
     //     }
     // }
     double R;
+    // R = slope(TABC, TABC_fit);
     double lidar_const;
+    // lidar_const = R;
     // lidar_const = sum2 / sum3;
     double cc[2] = {9.95127, 4.383524};
     lidar_const = cc[0] * pow(10.0, -14);
@@ -98,11 +99,12 @@ void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_p
 }
 
 void Lidar::microphysical(){
-    int reference = 800;
+    int reference = 1600;
     for(int i = 0; i != reference; ++i){
-        // CR[i] = signal1064[i] / signal532[i] / color_correct;
         eff_rad[i] = 0.2296 + 3.3784 * VDR[i] - 0.1358 * CR[i] + 33174.9 * TABC[i];
         volume_con[i] = 0.01294 + 2.03615 * VDR[i] - 0.01456 * CR[i] - 2247.2 * TABC[i];
+        // eff_rad[i] = -0.2328 + 2.3425 * VDR[i] - 0.0188 * CR[i] + 10556.6 * TABC[i];
+        // volume_con[i] = 0.0308 + 0.8156 * VDR[i] + 0.0594 * CR[i] + 37.85 * TABC[i];
     }
 }
 
@@ -131,11 +133,10 @@ void Lidar::show(std::ofstream &sout){
     int day = get_day();
     int hours = get_hours();
     double time = get_time();
-    int reference = 800;
+    int reference = 1400;
     for(int i = 30; i != reference; ++i){
         sout<<time<<"  "<<distance[i] / 1000.0<<"  "<<TABC[i] * 1000.0<<"  "<<extinction[i] * 1000.0<<"  "<<VDR[i];
         sout<<"  "<<CR[i]<<"  "<<volume_con[i]<<"  "<<eff_rad[i]<<"  "<<day<<"  "<<hours<<std::endl;
-        // sout<<distance[i]<<"  "<<extinction[i]<<"  "<<signal532s[i]<<"  "<<TABC[i]<<std::endl;
     }
 }
 
@@ -166,6 +167,15 @@ double Lidar::mean_vol_con(){
     return sum;
 }
 
+double Lidar::mean_color_ratio(){
+    double sum = 0.0;
+    for(int i = 200; i != 800; ++i){
+        sum += CR[i];
+    }
+    sum /= 600.0;
+    return sum;
+}
+
 double Lidar::mean_pdr(){
     double sum = 0.0;
     for(int i = 200; i != 800; ++i){
@@ -183,7 +193,7 @@ void Lidar::mean(std::shared_ptr<Mean> mean){
 
 void Lidar::smooth(std::unique_ptr<double[]> &ptr){
     double sum;
-    for(int i = 30; i != 800; ++i){
+    for(int i = 30; i != 1400; ++i){
         sum = 0.0;
         for(int j = -3; j != 4; ++j){
             sum += ptr[i + j];
@@ -192,3 +202,37 @@ void Lidar::smooth(std::unique_ptr<double[]> &ptr){
     }
 }
 
+void Lidar::add_fre(std::shared_ptr<Coe_count[]> ptr){
+    int n;
+    for(int i = 120; i != 800; ++i){
+        n = distance[i] / 1000.0;
+        ptr[n].add(extinction[i] * 1000.0, eff_rad[i], volume_con[i], VDR[i]);
+    }
+}
+
+double Lidar::slope(const std::unique_ptr<double[]> &x, const std::unique_ptr<double[]> &y){
+    double sum1 = 0.0;
+    double sum2 = 0.0;
+    double sum3 = 0.0;
+    double sum4 = 0.0;
+    double diff;
+    for(int i = 100; i != 700; ++i){
+        sum1 += x[i];
+        sum2 += y[i];
+        sum3 += x[i] * y[i];
+        sum4 += x[i] * x[i];
+    }
+    diff = (600.0 * sum3 - sum1 * sum2) / (600.0 * sum4 - sum1 * sum1);
+    return diff;
+}
+
+bool Lidar::is_cloud(){
+    double sum1 = 0.0, sum2 = 0.0;
+    for(int i = 500; i != 650; ++i){
+        sum1 += TABC[i];
+    }
+    for(int i = 300; i != 450; ++i){
+        sum2 += TABC[i];
+    }
+    return sum1 >= 1.5 * sum2;
+}
