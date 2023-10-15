@@ -20,20 +20,34 @@ void work(int month, std::shared_ptr<Fre[]> fre){
     double t, ext_count = 0.0, PDR_count = 0.0, eff_count = 0.0, vol_count = 0.0;
     double ext_var = 0.0, PDR_var = 0.0, eff_var = 0.0, vol_var = 0.0;
     double ext, PDR, eff, vol;
-    int count = 0;
+    int count_ext = 0;
+    int count_PDR = 0;
+    int count_eff = 0;
+    int count_vol = 0;
     while(sin>>t){
         sin>>t>>t>>ext>>PDR>>t>>vol>>eff>>t>>t;
-        count++;
-        ext_count += ext;
-        PDR_count += PDR;
-        eff_count += eff;
-        vol_count += vol;
+        if(ext > 0.0 and ext < 1.5){
+            ext_count += ext;
+            ++count_ext;
+        }
+        if(PDR > 0.0 and PDR < 0.5){
+            PDR_count += PDR;
+            ++count_PDR;
+        }
+        if(eff > 0.0 and eff < 3.0){
+            eff_count += eff;
+            ++count_eff;
+        }
+        if(vol > 0.0 and vol < 1.5){
+            vol_count += vol;
+            ++count_vol;
+        }
     }
     sin.close();
-    ext_count /= double(count);
-    PDR_count /= double(count);
-    eff_count /= double(count);
-    vol_count /= double(count);
+    ext_count /= double(count_ext);
+    PDR_count /= double(count_PDR);
+    eff_count /= double(count_eff);
+    vol_count /= double(count_vol);
     sin.open(filename);
     while (sin>>t)
     {
@@ -45,13 +59,13 @@ void work(int month, std::shared_ptr<Fre[]> fre){
     }
     sin.close();
     fre[0].mean_value = ext_count;
-    fre[0].variance = sqrt(ext_var / double(count));
+    fre[0].variance = sqrt(ext_var / double(count_ext));
     fre[1].mean_value = eff_count;
-    fre[1].variance = sqrt(eff_var / double(count));
+    fre[1].variance = sqrt(eff_var / double(count_eff));
     fre[2].mean_value = vol_count;
-    fre[2].variance = sqrt(vol_var / double(count));
+    fre[2].variance = sqrt(vol_var / double(count_vol));
     fre[3].mean_value = PDR_count;
-    fre[3].variance = sqrt(PDR_var / double(count));    
+    fre[3].variance = sqrt(PDR_var / double(count_PDR));    
 }
 
 int main(int argc, char *argv[]){

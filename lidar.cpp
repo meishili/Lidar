@@ -101,8 +101,8 @@ void Lidar::fernald(const std::shared_ptr<double[]> overlap, const std::shared_p
 void Lidar::microphysical(){
     int reference = 1600;
     for(int i = 0; i != reference; ++i){
-        eff_rad[i] = 0.2296 + 3.3784 * VDR[i] - 0.1358 * CR[i] + 33174.9 * TABC[i];
-        volume_con[i] = 0.01294 + 2.03615 * VDR[i] - 0.01456 * CR[i] - 2247.2 * TABC[i];
+        eff_rad[i] = 0.2296 + 3.3784 * PDR[i] - 0.1358 * CR[i] + 33174.9 * TABC[i];
+        volume_con[i] = 0.01294 + 2.03615 * PDR[i] - 0.01456 * CR[i] - 2247.2 * TABC[i];
         // eff_rad[i] = -0.2328 + 2.3425 * VDR[i] - 0.0188 * CR[i] + 10556.6 * TABC[i];
         // volume_con[i] = 0.0308 + 0.8156 * VDR[i] + 0.0594 * CR[i] + 37.85 * TABC[i];
     }
@@ -135,59 +135,79 @@ void Lidar::show(std::ofstream &sout){
     double time = get_time();
     int reference = 1400;
     for(int i = 30; i != reference; ++i){
-        sout<<time<<"  "<<distance[i] / 1000.0<<"  "<<TABC[i] * 1000.0<<"  "<<extinction[i] * 1000.0<<"  "<<VDR[i];
+        sout<<time<<"  "<<distance[i] / 1000.0<<"  "<<TABC[i] * 1000.0<<"  "<<extinction[i] * 1000.0<<"  "<<PDR[i];
         sout<<"  "<<CR[i]<<"  "<<volume_con[i]<<"  "<<eff_rad[i]<<"  "<<day<<"  "<<hours<<std::endl;
     }
 }
 
 double Lidar::mean_eff_rad(){
     double sum = 0.0;
-    for(int i = 200; i != 800; ++i){
-        sum += eff_rad[i];
+    int count = 0;
+    for(int i = 120; i != 600; ++i){
+        if(eff_rad[i] > 0.0 and eff_rad[i] < 2.5){
+            sum += eff_rad[i];
+            count++;
+        }
     }
-    sum /= 600.0;
+    sum /= double(count);
     return sum;
 }
 
 double Lidar::mean_ext(){
     double sum = 0.0;
-    for(int i = 200; i != 800; ++i){
-        sum += extinction[i];
+    int count = 0;
+    for(int i = 120; i != 600; ++i){
+        if(extinction[i] > 0.0 and extinction[i] < 0.0015){ 
+            sum += extinction[i];
+            ++count;
+        }
     }
-    sum /= 600.0;
+    sum /= double(count);
     return sum;
 }
 
 double Lidar::mean_vol_con(){
     double sum = 0.0;
-    for(int i = 200; i != 800; ++i){
-        sum += volume_con[i];
+    int count = 0;
+    for(int i = 120; i != 600; ++i){
+        if(volume_con[i] > 0.0 and volume_con[i] < 1.0){
+            sum += volume_con[i];
+            ++count;
+        }
     }
-    sum /= 600.0;
+    sum /= double(count);
     return sum;
 }
 
 double Lidar::mean_color_ratio(){
     double sum = 0.0;
-    for(int i = 200; i != 800; ++i){
-        sum += CR[i];
+    int count = 0;
+    for(int i = 120; i != 600; ++i){
+        if(CR[i] > 0.0 and CR[i] < 2.0){
+            sum += CR[i];
+            ++count;
+        }
     }
-    sum /= 600.0;
+    sum /= double(count);
     return sum;
 }
 
 double Lidar::mean_pdr(){
     double sum = 0.0;
-    for(int i = 200; i != 800; ++i){
-        sum += VDR[i];
+    int count = 0;
+    for(int i = 120; i != 600; ++i){
+        if(PDR[i] >0.0 and PDR[i] < 0.5){
+            sum += PDR[i];
+            ++count;
+        }
     }
-    sum /= 600.0;
+    sum /= double(count);
     return sum;
 }
 
 void Lidar::mean(std::shared_ptr<Mean> mean){
     mtx.lock();
-    mean->add(extinction, eff_rad, volume_con, VDR);
+    mean->add(extinction, eff_rad, volume_con, PDR);
     mtx.unlock();
 }
 
@@ -228,11 +248,20 @@ double Lidar::slope(const std::unique_ptr<double[]> &x, const std::unique_ptr<do
 
 bool Lidar::is_cloud(){
     double sum1 = 0.0, sum2 = 0.0;
-    for(int i = 500; i != 650; ++i){
-        sum1 += TABC[i];
-    }
-    for(int i = 300; i != 450; ++i){
+    bool iscloud = false;
+    for(int i = 200; i != 300; ++i){
         sum2 += TABC[i];
     }
-    return sum1 >= 1.5 * sum2;
+    for(int i = 3; i != 9; ++i){
+        int begin = 100 * i;
+        int end = begin + 100;
+        sum1 = 0.0;
+        for(int j = begin; j != end; ++j){
+            sum1 += TABC[j];
+        }
+        if(sum1 >= 1.5 * sum2){
+            iscloud = true;
+        }
+    }
+    return iscloud;
 }

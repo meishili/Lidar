@@ -13,7 +13,7 @@
 
 constexpr double molecule_lidar_ratio = 8.0 * 3.1415926 / 3.0;
 constexpr double lidar_ratio = 50.0;
-constexpr double color_correct = 1.22612;
+constexpr double color_correct = 0.12378;
 constexpr double molecule_depolarization = 0.00376;
 
 class Lidar{

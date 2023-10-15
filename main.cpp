@@ -3,7 +3,7 @@
 #include <vector>
 #include <chrono>
 #include "lidar.h"
-std::string city = "zy";
+std::string city = "dh";
 
 std::string path = "/home/yukikaze/lidar/microphysical/data/" + city + "/";
 
@@ -49,8 +49,10 @@ void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::
             lidar.fernald(overlap, molecule_extinction);
             lidar.microphysical();
             // if(!lidar.is_cloud()){
-            //     lidar.show(sout);
+                // lidar.show(sout);
             // }
+            if(!lidar.is_cloud()){
+            lidar.show(sout);
             double p = lidar.mean_pdr();
             PDR_mean += p;
             ext_mean += lidar.mean_ext();
@@ -60,16 +62,13 @@ void work(int year, int month, int day, std::shared_ptr<double[]> overlap, std::
             double CR = lidar.mean_color_ratio();
             // std::cout<<eff_mean<<std::endl;
             if(p >= 0.12){
-                if(!lidar.is_cloud()){
-                    lidar.mean(mean_coe[0]);
-                }
+                lidar.mean(mean_coe[0]);
                 if(month == 4 or month == 5 or month == 3){
                     lidar.add_fre(coe_count);
                 }
             }else{
-                if(!lidar.is_cloud()){
-                    lidar.mean(mean_coe[1]);
-                }
+                lidar.mean(mean_coe[1]);
+            }
             }
             // return;
         }
